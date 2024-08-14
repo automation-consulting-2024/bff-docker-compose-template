@@ -1,0 +1,65 @@
+services:
+  traefik:
+    image: 'traefik'
+    restart: always
+    command:
+      - '--api=true'
+      - '--api.insecure=true'
+      - '--providers.docker=true'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--entrypoints.web.http.redirections.entryPoint.to=websecure'
+      - '--entrypoints.web.http.redirections.entrypoint.scheme=https'
+      - '--entrypoints.websecure.address=:443'
+      - '--certificatesresolvers.mytlschallenge.acme.tlschallenge=true'
+      - '--certificatesresolvers.mytlschallenge.acme.email=${SSL_EMAIL}'
+      - '--certificatesresolvers.mytlschallenge.acme.storage=/letsencrypt/acme.json'
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - traefik_data:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - consultant-engine-network
+
+  bff:
+    init: true
+    image: syd.ocir.io/ax58nixymbda/consultant-engine:latest
+    restart: always
+    ports:
+      - '5174:5174'
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.bff.rule=Host(`${SUBDOMAIN}.${DOMAIN}`)
+      - traefik.http.routers.bff.tls=true
+      - traefik.http.routers.bff.entrypoints=websecure
+      - traefik.http.routers.bff.tls.certresolver=mytlschallenge
+      - traefik.http.services.bff.loadbalancer.server.port=${PORT:-5174}
+    environment:
+      NODE_ENV: production
+    expose:
+      - ${PORT:-5174}
+    networks:
+      - consultant-engine-network
+    env_file:
+      - .env
+
+  redis:
+    image: redis:latest
+    command: redis-server /redis.conf
+    volumes:
+      - redis:/var/lib/redis
+      - redis-config:/redis.conf
+    networks:
+      - consultant-engine-network
+
+volumes:
+  traefik_data:
+    external: true
+  redis:
+  redis-config:
+
+networks:
+  consultant-engine-network:
+    name: consultant-engine-network
