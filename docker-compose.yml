@@ -48,8 +48,6 @@ services:
 volumes:
   traefik_data:
     external: true
-  redis:
-  redis-config:
 
 networks:
   consultant-engine-network:
