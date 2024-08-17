@@ -25,7 +25,7 @@ services:
 
   bff:
     init: true
-    image: bacdam/consultant-engine:latest
+    image: syd.ocir.io/ax58nixymbda/consultant-engine:latest
     restart: always
     ports:
       - '5174:5174'
@@ -45,9 +45,20 @@ services:
     env_file:
       - .env
 
+  redis:
+    image: redis:latest
+    command: redis-server /redis.conf
+    volumes:
+      - redis:/var/lib/redis
+      - redis-config:/redis.conf
+    networks:
+      - consultant-engine-network
+
 volumes:
   traefik_data:
     external: true
+  redis:
+  redis-config:
 
 networks:
   consultant-engine-network:
