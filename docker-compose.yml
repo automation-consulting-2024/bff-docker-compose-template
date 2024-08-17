@@ -45,15 +45,6 @@ services:
     env_file:
       - .env
 
-  redis:
-    image: redis:latest
-    command: redis-server /redis.conf
-    volumes:
-      - redis:/var/lib/redis
-      - redis-config:/redis.conf
-    networks:
-      - consultant-engine-network
-
 volumes:
   traefik_data:
     external: true
